@@ -24,7 +24,7 @@
   <video id="video" playsinline></video>
   <p id="result"></p>
 
-  <script src="https://cdn.jsdelivr.net/npm/jsqr"></script>
+  <script src="https://unpkg.com/@zxing/library@latest"></script>
   <script>
     const videoElement = document.getElementById('video');
     const resultElement = document.getElementById('result');
@@ -37,29 +37,18 @@
           videoElement.srcObject = stream;
           videoElement.play();
 
-          const canvasElement = document.createElement('canvas');
-          const canvasContext = canvasElement.getContext('2d');
-          const scanFrame = () => {
-            if (videoElement.readyState === videoElement.HAVE_ENOUGH_DATA) {
-              canvasElement.width = videoElement.videoWidth;
-              canvasElement.height = videoElement.videoHeight;
-              canvasContext.drawImage(videoElement, 0, 0, canvasElement.width, canvasElement.height);
-              const imageData = canvasContext.getImageData(0, 0, canvasElement.width, canvasElement.height);
-              const code = jsQR(imageData.data, imageData.width, imageData.height, {
-                inversionAttempts: "dontInvert",
-              });
-              if (code) {
-                console.log('QR code detected:', code.data);
-                resultElement.textContent = `Result: ${code.data}`;
-                // Uncomment the next line if you want to navigate to the scanned URL
-                // window.location.href = code.data;
-              } else {
-                resultElement.textContent = 'No QR code detected.';
-              }
+          const codeReader = new ZXing.BrowserQRCodeReader();
+          codeReader.decodeFromVideoDevice(null, 'video', (result, error) => {
+            if (result) {
+              console.log('QR code detected:', result.text);
+              resultElement.textContent = `Result: ${result.text}`;
+              // Uncomment the next line if you want to navigate to the scanned URL
+              // window.location.href = result.text;
+            } else {
+              console.error('Error decoding QR code:', error);
+              resultElement.textContent = 'No QR code detected.';
             }
-            requestAnimationFrame(scanFrame);
-          };
-          scanFrame();
+          });
 
         })
         .catch(function(error) {
