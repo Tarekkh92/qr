@@ -32,7 +32,7 @@
     // Check if the mediaDevices API is supported
     if ('mediaDevices' in navigator && 'getUserMedia' in navigator.mediaDevices) {
       // Access the camera and start video streaming
-      navigator.mediaDevices.getUserMedia({ video: true })
+      navigator.mediaDevices.getUserMedia({ video: { facingMode: 'environment' } }) // Selecting the back camera
         .then(function(stream) {
           videoElement.srcObject = stream;
           const scanner = new Instascan.Scanner({ video: videoElement });
