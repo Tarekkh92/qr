@@ -45,6 +45,8 @@
           barcodeDetector.addEventListener('detected', (event) => {
             console.log('Detected barcodes:', event);
             resultElement.textContent = `Result: ${event[0].rawValue}`;
+            // If you want to navigate to the scanned URL, uncomment the next line
+            // window.location.href = event[0].rawValue;
           });
           
           const scanFrame = () => {
