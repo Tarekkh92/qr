@@ -24,6 +24,7 @@
   <video id="video" playsinline></video>
   <p id="result"></p>
 
+  <script src="https://cdn.jsdelivr.net/npm/jsqr"></script>
   <script>
     const videoElement = document.getElementById('video');
     const resultElement = document.getElementById('result');
@@ -36,31 +37,28 @@
           videoElement.srcObject = stream;
           videoElement.play();
 
-          // Listen for scan events
-          const barcodeDetector = new BarcodeDetector({ formats: ['qr_code'] });
-          barcodeDetector.addEventListener('error', (err) => {
-            console.error('Barcode detection error:', err);
-          });
-
-          barcodeDetector.addEventListener('detected', (event) => {
-            console.log('Detected barcodes:', event);
-            resultElement.textContent = `Result: ${event[0].rawValue}`;
-            // If you want to navigate to the scanned URL, uncomment the next line
-            // window.location.href = event[0].rawValue;
-          });
-          
+          const canvasElement = document.createElement('canvas');
+          const canvasContext = canvasElement.getContext('2d');
           const scanFrame = () => {
-            if (!videoElement.paused && !videoElement.ended) {
-              barcodeDetector.detect(videoElement)
-                .catch((err) => {
-                  console.error('Barcode detection error:', err);
-                })
-                .finally(() => {
-                  setTimeout(scanFrame, 200); // Scan every 200ms
-                });
+            if (videoElement.readyState === videoElement.HAVE_ENOUGH_DATA) {
+              canvasElement.width = videoElement.videoWidth;
+              canvasElement.height = videoElement.videoHeight;
+              canvasContext.drawImage(videoElement, 0, 0, canvasElement.width, canvasElement.height);
+              const imageData = canvasContext.getImageData(0, 0, canvasElement.width, canvasElement.height);
+              const code = jsQR(imageData.data, imageData.width, imageData.height, {
+                inversionAttempts: "dontInvert",
+              });
+              if (code) {
+                console.log('QR code detected:', code.data);
+                resultElement.textContent = `Result: ${code.data}`;
+                // Uncomment the next line if you want to navigate to the scanned URL
+                // window.location.href = code.data;
+              } else {
+                resultElement.textContent = 'No QR code detected.';
+              }
             }
+            requestAnimationFrame(scanFrame);
           };
-          
           scanFrame();
 
         })
