@@ -29,39 +29,33 @@
     const videoElement = document.getElementById('video');
     const resultElement = document.getElementById('result');
 
-    // Check if the mediaDevices API is supported
-    if ('mediaDevices' in navigator && 'getUserMedia' in navigator.mediaDevices) {
-      // Access the camera and start video streaming
-      navigator.mediaDevices.getUserMedia({ video: { facingMode: 'environment' } }) // Selecting the back camera
-        .then(function(stream) {
-          videoElement.srcObject = stream;
-          const scanner = new Instascan.Scanner({ video: videoElement });
+    // Initialize the scanner
+    let scanner = new Instascan.Scanner({ video: videoElement });
 
-          scanner.addListener('scan', function(content) {
-            // QR code detected, display the result
-            resultElement.textContent = `Result: ${content}`;
+    // Start scanning for QR codes
+    Instascan.Camera.getCameras()
+      .then(function(cameras) {
+        // Check if any cameras are available
+        if (cameras.length > 0) {
+          // Find the back camera and start scanning
+          cameras.forEach(function(camera) {
+            if (camera.facing == 'environment') {
+              scanner.start(camera);
+              return;
+            }
           });
+        } else {
+          console.error('No cameras found.');
+        }
+      })
+      .catch(function(error) {
+        console.error('Error accessing cameras:', error);
+      });
 
-          // Start scanning for QR codes
-          Instascan.Camera.getCameras()
-            .then(function(cameras) {
-              // Loop through available cameras and select the one with "environment" facing mode
-              cameras.forEach(function(camera) {
-                if (camera.facing == 'environment') {
-                  scanner.start(camera);
-                }
-              });
-            })
-            .catch(function(error) {
-              console.error('Error accessing cameras:', error);
-            });
-        })
-        .catch(function(error) {
-          console.error('Error accessing camera:', error);
-        });
-    } else {
-      resultElement.textContent = 'Camera access is not supported by your browser.';
-    }
+    // Listen for scan events
+    scanner.addListener('scan', function(content) {
+      resultElement.textContent = `Result: ${content}`;
+    });
   </script>
 </body>
 </html>
