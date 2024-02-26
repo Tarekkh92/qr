@@ -24,38 +24,50 @@
   <video id="video" playsinline></video>
   <p id="result"></p>
 
-  <script src="https://rawgit.com/schmich/instascan-builds/master/instascan.min.js"></script>
   <script>
     const videoElement = document.getElementById('video');
     const resultElement = document.getElementById('result');
 
-    // Initialize the scanner
-    let scanner = new Instascan.Scanner({ video: videoElement });
+    // Check if the mediaDevices API is supported
+    if ('mediaDevices' in navigator && 'getUserMedia' in navigator.mediaDevices) {
+      // Access the camera and start video streaming
+      navigator.mediaDevices.getUserMedia({ video: true })
+        .then(function(stream) {
+          videoElement.srcObject = stream;
+          videoElement.play();
 
-    // Start scanning for QR codes
-    Instascan.Camera.getCameras()
-      .then(function(cameras) {
-        // Check if any cameras are available
-        if (cameras.length > 0) {
-          // Find the back camera and start scanning
-          cameras.forEach(function(camera) {
-            if (camera.facing == 'environment') {
-              scanner.start(camera);
-              return;
-            }
+          // Listen for scan events
+          const barcodeDetector = new BarcodeDetector({ formats: ['qr_code'] });
+          barcodeDetector.addEventListener('error', (err) => {
+            console.error('Barcode detection error:', err);
           });
-        } else {
-          console.error('No cameras found.');
-        }
-      })
-      .catch(function(error) {
-        console.error('Error accessing cameras:', error);
-      });
 
-    // Listen for scan events
-    scanner.addListener('scan', function(content) {
-      resultElement.textContent = `Result: ${content}`;
-    });
+          barcodeDetector.addEventListener('detected', (event) => {
+            console.log('Detected barcodes:', event);
+            resultElement.textContent = `Result: ${event[0].rawValue}`;
+          });
+          
+          const scanFrame = () => {
+            if (!videoElement.paused && !videoElement.ended) {
+              barcodeDetector.detect(videoElement)
+                .catch((err) => {
+                  console.error('Barcode detection error:', err);
+                })
+                .finally(() => {
+                  setTimeout(scanFrame, 200); // Scan every 200ms
+                });
+            }
+          };
+          
+          scanFrame();
+
+        })
+        .catch(function(error) {
+          console.error('Error accessing camera:', error);
+        });
+    } else {
+      resultElement.textContent = 'Camera access is not supported by your browser.';
+    }
   </script>
 </body>
 </html>
