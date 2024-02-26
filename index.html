@@ -45,11 +45,12 @@
           // Start scanning for QR codes
           Instascan.Camera.getCameras()
             .then(function(cameras) {
-              if (cameras.length > 0) {
-                scanner.start(cameras[0]);
-              } else {
-                console.error('No cameras found.');
-              }
+              // Loop through available cameras and select the one with "environment" facing mode
+              cameras.forEach(function(camera) {
+                if (camera.facing == 'environment') {
+                  scanner.start(camera);
+                }
+              });
             })
             .catch(function(error) {
               console.error('Error accessing cameras:', error);
