@@ -31,7 +31,7 @@
     // Check if the mediaDevices API is supported
     if ('mediaDevices' in navigator && 'getUserMedia' in navigator.mediaDevices) {
       // Access the camera and start video streaming
-      navigator.mediaDevices.getUserMedia({ video: true })
+      navigator.mediaDevices.getUserMedia({ video: { facingMode: { exact: "environment" } } })
         .then(function(stream) {
           videoElement.srcObject = stream;
           videoElement.play();
